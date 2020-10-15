@@ -1,0 +1,119 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy import stats
+
+#importing data file
+frame = pd.read_csv('C:/Users/Zafrullah Bhatti/Downloads/data1.csv', header = None)
+frame.head(10)
+
+#adding headers to the dataset
+header = ('symboling','normalized-losses','make',
+'fuel-type','aspiration','num-of-doors','body-style','drive-wheels','engine-location','wheel-base','length','width',
+'height','curb-weight','engine-type',
+'num-of-cylinders','engine-size','fuel-system','bore','stroke','compression-ratio','horsepower','peak-rpm','city-mpg',
+'highway-mpg','price')
+frame.columns = header
+
+#replacing all the '?' with 'NaN'
+frame = frame.replace("?","NaN")
+
+#Convering city-mpg to L/100km
+frame["city-mpg"] = 235/frame["city-mpg"]
+frame.rename(columns = {"city-mpg":"L/100km"},inplace = True)
+
+#Dropping the rows with NaN in them
+frame.drop(frame.loc[frame['horsepower']=='NaN'].index, inplace=True)
+
+
+#converting datatype of 'price' and 'horsepower' from object to float
+frame["price"] = frame["price"].astype("float")
+frame['horsepower']=frame['horsepower'].astype("int")
+
+#Normalization of length, width and height
+frame["length"] = (frame["length"]-frame["length"].min())/(frame["length"].max() - frame["length"].min())
+frame["width"] = (frame["width"]-frame["width"].min())/(frame["width"].max() - frame["width"].min())
+frame["height"] = (frame["height"]-frame["height"].min())/(frame["height"].max() - frame["height"].min())
+
+#Creating Bins
+bins = np.linspace(min(frame['price']),max(frame['price']),4)
+group_name = ['Cost effective' , 'Decent', 'Class']
+frame['price_bin'] = pd.cut(frame['price'],bins,labels = group_name, include_lowest = True)
+
+#Downloading the file to check if the desired changes are successfuly made
+frame.to_excel('C:/Users/Zafrullah Bhatti/Downloads/output.xlsx')
+
+#Coverting categorical data into numeric data
+dv = pd.get_dummies(frame['fuel-type'])
+frame = pd.concat([frame, dv], axis=1)
+frame.drop("fuel-type", axis = 1, inplace=True)
+
+
+#Downloading the file to check if the desired changes are successfuly made
+frame.to_excel('C:/Users/Zafrullah Bhatti/Downloads/output.xlsx')
+
+frame.head(10)
+
+drivewheelcount = frame['drive-wheels'].value_counts().to_frame()
+drivewheelcount.rename(columns = {'drive-wheels':'count'},inplace = True)
+drivewheelcount
+
+#Renaming mercedes-benz to benz for better visualization
+frame['make'] = frame['make'].replace("mercedes-benz","benz")
+
+#Creating scatter plot between engine size and price
+x = frame['engine-size']
+y= frame['price']
+plt.figure(figsize=(22,10))
+plt.scatter(x,y)
+plt.title('Engine Size vs Price', fontsize = 20)  #Labeling the figure
+plt.xlabel('Engine Size', fontsize = 18)
+plt.ylabel('Price', fontsize = 18)
+
+#Creating scatter plot between engine size and price and finding the correlation
+plt.figure(figsize=(22,10))
+sns.regplot(x='engine-size', y='price',data = frame)
+plt.ylim(0,)
+plt.title('Engine Size & Price Correlation', fontsize = 20)  #Labeling the figure
+plt.xlabel('Engine Size', fontsize = 18)
+plt.ylabel('Price', fontsize = 18)
+
+#Creating box-plot between make and price
+plt.figure(figsize=(23,10))
+sns.boxplot(    data=frame,   x='make',    y='price')
+plt.title('Make vs Price', fontsize = 20)  #Labeling the figure
+plt.xlabel('Make', fontsize = 18)
+plt.ylabel('Price', fontsize = 18)
+
+#Grouping mean of the price by body style
+frame_group = frame[['drive-wheels','body-style','price']]
+frame_grp=frame_group.groupby(['drive-wheels','body-style'],as_index = False).mean()
+frame_pvt = frame_grp.pivot(index = 'drive-wheels', columns = 'body-style')
+frame_pvt
+
+#Finding corelation between highway-mpg and price
+plt.figure(figsize=(23,10))
+sns.regplot(x='highway-mpg', y='price',data = frame,color = 'r')
+plt.title('Highway-mpg & Price correlation', fontsize = 20)  #Labeling the figure
+plt.xlabel('Make', fontsize = 18)
+plt.ylabel('Price', fontsize = 18)
+
+#Calculating pearson correlation values between horsepower and price
+pearcoef, p_value = stats.pearsonr(frame['horsepower'], frame['price'])
+print("Pearson Correlation between horsepower and price")
+print("The pearson coefficient between horsepower and price is ", pearcoef)
+print("The P value between horsepower and price is ", p_value)
+print("Thus the both values are highly correlated")
+print("____________________________________________________________________________")
+#ANOVA method on make and price
+frame_anova = frame[['make','price']]
+anova_group = frame_anova.groupby(['make'])
+anova_results = stats.f_oneway(anova_group.get_group("honda")["price"],anova_group.get_group("subaru")["price"])
+print("ANOVA Results between Subaru and Honda ", anova_results)
+
+#ANOVA method on make and price
+frame_anova2 = frame[['make','price']]
+anova_group2 = frame_anova.groupby(['make'])
+anova_results2 = stats.f_oneway(anova_group.get_group("honda")["price"],anova_group.get_group("jaguar")["price"])
+print("ANOVA Results between Jaguar and Honda ", anova_results2)
