@@ -3,9 +3,10 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+from sklearn.linear_model import LinearRegression
 
 #importing data file
-frame = pd.read_csv('C:/Users/Zafrullah Bhatti/Downloads/data1.csv', header = None)
+frame = pd.read_csv('C:/Users/Lenovo/Downloads/data.csv', header = None)
 frame.head(10)
 
 #adding headers to the dataset
@@ -42,7 +43,7 @@ group_name = ['Cost effective' , 'Decent', 'Class']
 frame['price_bin'] = pd.cut(frame['price'],bins,labels = group_name, include_lowest = True)
 
 #Downloading the file to check if the desired changes are successfuly made
-frame.to_excel('C:/Users/Zafrullah Bhatti/Downloads/output.xlsx')
+frame.to_excel('C:/Users/Lenovo/Downloads/output.xlsx')
 
 #Coverting categorical data into numeric data
 dv = pd.get_dummies(frame['fuel-type'])
@@ -51,7 +52,7 @@ frame.drop("fuel-type", axis = 1, inplace=True)
 
 
 #Downloading the file to check if the desired changes are successfuly made
-frame.to_excel('C:/Users/Zafrullah Bhatti/Downloads/output.xlsx')
+frame.to_excel('C:/Users/Lenovo/Downloads/output.xlsx')
 
 frame.head(10)
 
@@ -117,3 +118,21 @@ frame_anova2 = frame[['make','price']]
 anova_group2 = frame_anova.groupby(['make'])
 anova_results2 = stats.f_oneway(anova_group.get_group("honda")["price"],anova_group.get_group("jaguar")["price"])
 print("ANOVA Results between Jaguar and Honda ", anova_results2)
+
+'''
+#Forming a model between engine size and price using linear regression
+lm = LinearRegression()
+lm.fit(frame[['engine-size']], frame['price'])
+j=[[130]]
+lm.predict(j)
+'''
+
+#Forming a multiple linear regression model
+lm = LinearRegression()
+Z = frame[['engine-size','highway-mpg','horsepower','curb-weight']]
+lm.fit(Z, frame['price'])
+Input = [[130,27,111,2548]]
+lm.predict(Input)
+
+
+
